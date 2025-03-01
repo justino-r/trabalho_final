@@ -49,6 +49,18 @@
             <q-icon name="money_off" size="40px" />
           </q-card-section>
         </q-card>
+
+    <!--</q-card-section>-->
+
+  </div>
+    <div class="col-xs-12 col-sm-6 col-md-3 q-pa-sm">
+        <q-card class="bg-negative text-white">
+          <q-card-section>
+            <div class="text-h6">relatorio</div>
+            <div class="text-subtitle2">$4,200</div>
+            <q-icon name="money_off" size="40px" />
+          </q-card-section>
+        </q-card>
       </div>
     </q-card-section>
 

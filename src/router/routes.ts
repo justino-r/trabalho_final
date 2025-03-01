@@ -3,20 +3,33 @@ import type { RouteRecordRaw } from 'vue-router';
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    component: () => import('layouts/MainLayout.vue'),
-    children: [{ path: '', component: () => import('pages/IndexPage.vue') },
-    { path: '/dashboard', component: () => import('pages/DashboardPage.vue') },
-    { path: '/clientes', component: () => import('pages/clientes/ListaClientesPage.vue')},
-  ],
+    component: () => import('layouts/BlankLayout.vue'), // Layout simplificado para login
+    children: [
+      { path: '', component: () => import('pages/Login.vue') }, // Página de login na raiz
+    ],
   },
   {
-    path: '/',
-    component: () => import('layouts/BlankLayout.vue'),
-    children: [{ path: '/login', component: () => import('pages/Login.vue') }],
-  },
+    path: '/dashboard',
+    component: () => import('layouts/MainLayout.vue'), // Layout principal após login
+    meta: { requiresAuth: true }, // Protegendo a rota do dashboard
+    children: [
+      { path: '', component: () => import('pages/DashboardPage.vue') },
+      { path: '/clientes', component: () => import('pages/clientes/ListaClientesPage.vue')},
+      { path: '/faturas', component: () => import('pages/Facturas/ListaFacturasPage.vue')},
+      { path: '/pecas', component: () => import('pages/pecas/ListaPecasPage.vue')},
+      { path: '/despesas', component: () => import('pages/Despesas/ListaDespesasPage.vue')},
+      { path: '/relatorios', component: () => import('pages/Relatorios/ListaRelatoriosPage.vue')},
+      { path: '/funcionarios', component: () => import('pages/Funcionarios/ListarFuncionariosPage.vue')},
+      { path: '/servicos', component: () => import('pages/Servicos/ListarServicosPage.vue')},
+      { path: '/cargos', component: () => import('pages/Cargos/ListarCargos.vue')},
+      {path: '/tipo_pecas', component: () => import('pages/tipo_peca/ListarTipoPeca.vue')},
+      {path: '/factura_peca', component: () => import('pages/factura_peca/FacturaPecaPage.vue')},
 
-  // Always leave this as last one,
-  // but you can also remove it
+
+    ],
+
+  },
+  // Rota para páginas não encontradas
   {
     path: '/:catchAll(.*)*',
     component: () => import('pages/ErrorNotFound.vue'),

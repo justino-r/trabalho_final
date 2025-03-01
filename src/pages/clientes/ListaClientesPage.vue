@@ -1,9 +1,7 @@
 <template>
   <q-page padding>
-    <!-- Cabeçalho -->
-    <div class="text-h4 text-center text-primary">Gestão de Clientes</div>
+    <div class="header-title">Gestão de Clientes</div>
 
-    <!-- Tabela de Clientes -->
     <q-card>
       <q-card-section class="row items-center">
         <q-input
@@ -30,8 +28,7 @@
       <q-separator />
 
       <q-table
-        rows-per-page-options="[5, 10, 20]"
-        :rows="filteredClientes"
+        :rows="clientes"
         :columns="columns"
         row-key="id"
         class="q-mt-md"
@@ -46,7 +43,7 @@
               icon="edit"
               color="blue"
               aria-label="Editar"
-              @click="editClient(props.row)"
+              @click="showEditClientModal(props.row)"
             />
             <q-btn
               flat
@@ -61,30 +58,16 @@
       </q-table>
     </q-card>
 
-    <!-- Modal para Adicionar Cliente -->
     <q-dialog v-model="addClientDialog">
       <q-card style="max-width: 500px">
         <q-card-section>
-          <div class="text-h6">Adicionar Cliente</div>
-          <div class="text-caption">Preencha os dados abaixo para adicionar um novo cliente</div>
+          <div class="modal-title">Adicionar Cliente</div>
+          <div class="modal-subtitle">Preencha os dados abaixo para adicionar um novo cliente</div>
         </q-card-section>
         <q-separator />
         <q-card-section>
-          <q-input
-            v-model="newClient.nome"
-            label="Nome"
-            outlined
-            dense
-            required
-            class="q-mb-sm"
-          />
-          <q-input
-            v-model="newClient.contacto"
-            label="Contato"
-            outlined
-            dense
-            required
-          />
+          <q-input v-model="newClient.nome" label="Nome" outlined dense required class="q-mb-sm" />
+          <q-input v-model="newClient.contacto" label="Contacto" outlined dense required class="q-mb-sm" />
         </q-card-section>
         <q-card-actions align="right">
           <q-btn flat label="Cancelar" color="negative" v-close-popup />
@@ -92,88 +75,172 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <q-dialog v-model="editClientDialog">
+      <q-card style="max-width: 900px">
+        <q-card-section>
+          <div class="modal-title">Editar Cliente</div>
+          <div class="modal-subtitle">Atualize os dados do cliente selecionado</div>
+        </q-card-section>
+        <q-separator />
+        <q-card-section>
+          <q-input v-model="editClientData.nome" label="Nome" outlined dense required class="q-mb-sm" />
+          <q-input v-model="editClientData.contacto" label="Contacto" outlined dense required class="q-mb-sm" />
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn flat label="Cancelar" color="negative" v-close-popup />
+          <q-btn flat label="Atualizar" color="positive" @click="updateClient" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, watch, onMounted } from "vue";
+import api from "app/utils/Api";
+import { useQuasar } from "quasar";
+import { Notify } from "quasar";
 
-// Dados fictícios de clientes
-const clientes = ref([
-  { id: 1, nome: 'João Silva', contacto: '843456789' },
-  { id: 2, nome: 'Maria Santos', contacto: '843123456' },
-  { id: 3, nome: 'Carlos Almeida', contacto: '847654321' },
-  { id: 4, nome: 'Ana Paula', contacto: '842369741' },
-  { id: 5, nome: 'Pedro Rocha', contacto: '846789123' },
-  { id: 6, nome: 'Lucas Pereira', contacto: '843215678' },
-  { id: 7, nome: 'Isabela Gomes', contacto: '845678912' },
-  { id: 8, nome: 'Rafael Costa', contacto: '847123456' },
-  { id: 9, nome: 'Fernanda Lima', contacto: '846541236' },
-  { id: 10, nome: 'Eduardo Moreira', contacto: '843654789' }
-]);
-
-// Configuração da tabela
-const columns = [
-  { name: 'nome', required: true, label: 'Nome', align: 'left', field: 'nome' },
-  { name: 'contacto', label: 'Contato', align: 'left', field: 'contacto' },
-  { name: 'actions', label: 'Ações', align: 'center', field: 'actions' }
-];
-
-const search = ref('');
-const addClientDialog = ref(false);
-const newClient = ref({ nome: '', contacto: '' });
-
-// Filtrar clientes com base no campo de pesquisa
-const filteredClientes = computed(() =>
-  clientes.value.filter((cliente) =>
-    cliente.nome.toLowerCase().includes(search.value.toLowerCase())
-  )
-);
-
-// Funções para adicionar, editar e excluir clientes
-function showAddClientModal() {
-  newClient.value = { nome: '', contacto: '' };
-  addClientDialog.value = true;
+interface Cliente {
+  id: number;
+  nome: string;
+  contacto: string;
+  email: string;
 }
 
-function addClient() {
-  if (newClient.value.nome && newClient.value.contacto) {
-    const id = clientes.value.length + 1;
-    clientes.value.push({ id, ...newClient.value });
-    addClientDialog.value = false;
+const $q = useQuasar();
+const clientes = ref<Cliente[]>([]);
+const search = ref<string>("");
+const addClientDialog = ref<boolean>(false);
+const editClientDialog = ref<boolean>(false);
+
+const newClient = ref<Partial<Cliente>>({ nome: "", contacto: "", email: "" });
+const editClientData = ref<Cliente>({ id: 0, nome: "", contacto: "", email: "" });
+
+const columns = [
+  { name: "nome", label: "Nome", field: "nome", required: true, align: "left" },
+  { name: "contacto", label: "Contacto", field: "contacto", align: "left" },
+  { name: "actions", label: "Ações", field: "actions", align: "center" },
+];
+
+async function fetchClientes() {
+  try {
+    const token = localStorage.getItem("auth_token");
+    if (!token) throw new Error("Token de autenticação não encontrado.");
+
+    const response = await api.get(`api/customers?filter[nome]=${search.value}&sort=nome`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+
+    if (Array.isArray(response.data.data) && response.data.data.length > 0) {
+  clientes.value = response.data.data;
+} else {
+  clientes.value = [];
+}
+
+  } catch (error) {
+    console.error("Erro ao buscar clientes:", error);
   }
 }
 
-function editClient(client: any) {
-  newClient.value = { ...client };
+function showAddClientModal() {
+  newClient.value = { nome: "", contacto: "", email: "" };
   addClientDialog.value = true;
 }
 
-function deleteClient(id: number) {
-  clientes.value = clientes.value.filter((cliente) => cliente.id !== id);
+function showEditClientModal(cliente: Cliente) {
+  editClientData.value = { ...cliente };
+  editClientDialog.value = true;
 }
 
-// return {
-//   clientes,
-//   columns,
-//   search,
-//   addClientDialog,
-//   newClient,
-//   filteredClientes,
-//   showAddClientModal,
-//   addClient,
-//   editClient,
-//   deleteClient
-// }
+async function updateClient() {
+  try {
+    const token = localStorage.getItem("auth_token");
+    if (!token) throw new Error("Token de autenticação não encontrado.");
+
+    await api.put(`api/customers/${editClientData.value.id}`, editClientData.value, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    Notify.create({ message: "Cliente atualizado com sucesso!", type: "positive", position: "top-right" });
+    editClientDialog.value = false;
+    fetchClientes();
+  } catch (error) {
+    console.error("Erro ao atualizar cliente:", error);
+    Notify.create({ message: "Erro ao atualizar cliente.", type: "negative", position: "top-right" });
+  }
+}
+
+async function addClient() {
+  if (!newClient.value.nome || !newClient.value.contacto) {
+    Notify.create({ message: "Todos os campos são obrigatórios.", type: "warning", position: "top" });
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem("auth_token");
+    if (!token) throw new Error("Token de autenticação não encontrado.");
+
+    await api.post("api/customers", newClient.value, { headers: { Authorization: `Bearer ${token}` } });
+
+    Notify.create({ message: "Cliente adicionado com sucesso!", type: "positive", position: "top-right" });
+    addClientDialog.value = false;
+    fetchClientes();
+  } catch (error) {
+    console.error("Erro ao adicionar cliente:", error);
+    Notify.create({ message: "Erro ao adicionar cliente.", type: "negative", position: "top-right" });
+  }
+}
+
+async function deleteClient(id: number) {
+  $q.dialog({
+    title: "Apagar",
+    message: "Deseja apagar o cliente?",
+    persistent: true,
+    cancel: true,
+    ok: "Sim",
+  }).onOk(async () => {
+    try {
+      const token = localStorage.getItem("auth_token");
+      if (!token) throw new Error("Token de autenticação não encontrado.");
+
+      await api.delete(`api/customers/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      Notify.create({ message: "Cliente excluído com sucesso", type: "positive", position: "top-left" });
+      fetchClientes();
+    } catch (error) {
+      Notify.create({ message: "Erro ao excluir cliente", type: "negative", position: "top-right" });
+    }
+  });
+}
+
+watch(search, fetchClientes);
+
+onMounted(fetchClientes);
 </script>
 
-<style scoped>
-.text-h4 {
+<style>
+.header-title {
+  font-size: 24px;
   font-weight: bold;
-  margin-bottom: 1rem;
+  color: var(--q-primary);
+  text-align: center;
+  margin-bottom: 20px;
 }
 
-.q-card-section {
-  padding: 1.2rem;
+.modal-title {
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--q-primary);
+}
+
+.modal-subtitle {
+  font-size: 14px;
+  color: var(--q-gray-7);
+  margin-top: 5px;
 }
 </style>

@@ -1,42 +1,62 @@
 <template>
-
   <div class="login-page">
     <div class="form">
-      <form class="register-form">
-        <input type="text" placeholder="name" />
-        <input type="password" placeholder="password" />
-        <input type="text" placeholder="email address" />
-        <button>create</button>
-        <p class="message">Already registered? <a href="#">Sign In</a></p>
-      </form>
-      <form class="login-form">
-        <input type="text" placeholder="username" />
-        <input type="password" placeholder="password" />
-        <button @click="login()">login</button>
-        <p class="message">Not registered? <a href="#">Create an account</a></p>
+      <form class="login-form" @submit.prevent="login">
+        <input v-model="email" type="email" placeholder="email" required />
+        <input v-model="password" type="password" placeholder="password" required />
+        <button type="submit">Login</button>
+        <p class="message">
+          Not registered? <a href="#">Create an account</a>
+        </p>
       </form>
     </div>
   </div>
-
 </template>
 
-
 <script>
+import api from 'app/utils/Api';
+
 export default {
   data() {
     return {
-      isLogin: true,
+      email: "",
+      password: "",
     };
   },
   methods: {
-    login() {
-      this.$router.push('/');
-    },
+    async  login() {
+
+  try {
+    const response = await api.post("/api/login", {
+      email: this.email,
+      password: this.password,
+    });
+    console.log("Sucesso:", response);
+
+    const token = response.data.data.token;
+    const id = response.data.data.user.id;
+     localStorage.setItem("user_id", id);
+
+    // Salve o token no localStorage
+    localStorage.setItem("auth_token", token);
+
+    // Redirecione para o dashboard
+    this.$router.push("/dashboard");
+  } catch (error) {
+    console.error("Erro:", error);
+    alert("Erro no login.");
+  }
+},
+
   },
-}
+  mounted() {
+  localStorage.removeItem("auth_token");
+  localStorage.removeItem("user_id");
+},
+};
+
 
 </script>
-
 
 <style>
 @import url(https://fonts.googleapis.com/css?family=Roboto:300);
@@ -50,7 +70,7 @@ export default {
 .form {
   position: relative;
   z-index: 1;
-  background: #FFFFFF;
+  background: #ffffff;
   max-width: 360px;
   margin: 0 auto 100px;
   padding: 45px;
@@ -78,17 +98,16 @@ export default {
   width: 100%;
   border: 0;
   padding: 15px;
-  color: #FFFFFF;
+  color: #ffffff;
   font-size: 14px;
-  -webkit-transition: all 0.3 ease;
-  transition: all 0.3 ease;
+  transition: all 0.3s ease;
   cursor: pointer;
 }
 
 .form button:hover,
 .form button:active,
 .form button:focus {
-  background: var(--q-primary);;
+  background: var(--q-primary);
 }
 
 .form .message {
@@ -98,60 +117,12 @@ export default {
 }
 
 .form .message a {
-  color: var(--q-primary);;
+  color: var(--q-primary);
   text-decoration: none;
-}
-
-.form .register-form {
-  display: none;
-}
-
-.container {
-  position: relative;
-  z-index: 1;
-  max-width: 300px;
-  margin: 0 auto;
-}
-
-.container:before,
-.container:after {
-  content: "";
-  display: block;
-  clear: both;
-}
-
-.container .info {
-  margin: 50px auto;
-  text-align: center;
-}
-
-.container .info h1 {
-  margin: 0 0 15px;
-  padding: 0;
-  font-size: 36px;
-  font-weight: 300;
-  color: #1a1a1a;
-}
-
-.container .info span {
-  color: #4d4d4d;
-  font-size: 12px;
-}
-
-.container .info span a {
-  color: #000000;
-  text-decoration: none;
-}
-
-.container .info span .fa {
-  color: #EF3B3A;
 }
 
 body {
-  /* background: #76b852; */
-  /* fallback for old browsers */
   background: #ffffff;
-  /* background: linear-gradient(90deg, rgba(141, 194, 111, 1) 0%, rgba(118, 184, 82, 1) 50%); */
   font-family: "Roboto", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
