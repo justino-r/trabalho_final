@@ -10,14 +10,14 @@
         <q-select filled label="Pesquisar Cliente" v-model="clienteSelecionado" :options="clientes" option-label="nome"
           option-value="id" use-input input-debounce="500" @filter="buscarClientes" emit-value map-options
           class="col" />
-        <!-- Botão Adicionar Cliente -->
         <q-btn label="Adicionar Cliente" color="primary" @click="navegarParaAdicionarCliente" class="q-mt-none"
           style="margin-left: 10px;" />
       </q-card-section>
 
       <!-- Formulário de Factura -->
       <q-card-section class="row q-gutter-md">
-        <q-input filled label="Método de Pagamento" v-model="metodoPagamento" class="col" />
+        <q-select filled label="Método de Pagamento" v-model="metodoPagamento" :options="['Numerário', 'POS']"
+          class="col" />
         <q-input filled label="Data de Levantamento" v-model="dataLevantamento" type="date" class="col" />
       </q-card-section>
 
@@ -27,31 +27,30 @@
       </q-card-section>
 
       <q-card-section class="row">
-        <!-- SELECIONAR SERVIÇO -->
         <q-card class="col-6 q-pa-md">
           <div class="text-primary text-bold">Selecionar Serviço</div>
           <q-select filled label="Selecionar Serviço" :options="servicos" option-label="nome"
             v-model="servicoSelecionado" @update:model-value="atualizarPecas" class="q-mt-md" />
 
-          <!-- LISTA DAS PEÇAS DO SERVIÇO SELECIONADO -->
           <q-list bordered separator class="q-mt-md">
             <q-item v-for="(peca, index) in pecas" :key="index" clickable @click="selecionarPeca(peca)">
               <q-item-section>
-                {{ peca.tipo_peca.nome }} - {{ peca.tipo_peca.descricao }}
-                ({{ peca.preco }} MZN)
+                {{ peca.tipo_peca.nome }} - {{ peca.tipo_peca.descricao }} ({{ peca.preco }} MZN)
               </q-item-section>
             </q-item>
           </q-list>
         </q-card>
 
-        <!-- PEÇAS SELECIONADAS -->
         <q-card class="col-6 q-pa-md">
           <div class="text-primary text-bold">Selecionados</div>
           <q-list bordered separator class="q-mt-md">
             <q-item v-for="(item, index) in selecionados" :key="index">
               <q-item-section>
-                {{ item.tipo_peca.nome }} - {{ item.tipo_peca.descricao }}
-                ({{ item.preco }} MZN)
+                {{ item.tipo_peca.nome }} - {{ item.tipo_peca.descricao }} ({{ item.preco }} MZN)
+              </q-item-section>
+              <q-item-section side>
+                <q-input filled dense v-model="item.cor" label="Cor" class="q-mb-md" />
+                <q-input filled dense v-model.number="item.quantidade" label="Quantidade" type="number" min="1" />
               </q-item-section>
             </q-item>
           </q-list>
@@ -73,14 +72,13 @@
 import { ref, computed, onMounted } from 'vue';
 import api from 'app/utils/Api';
 import { useQuasar } from 'quasar';
-import { useRouter } from 'vue-router'; // Importando o useRouter
+import { useRouter } from 'vue-router';
 
 const $q = useQuasar();
-const router = useRouter(); // Instanciando o router
+const router = useRouter();
 
 const clientes = ref([]);
 const clienteSelecionado = ref(null);
-
 const servicos = ref([]);
 const servicoSelecionado = ref(null);
 const pecas = ref([]);
@@ -88,11 +86,11 @@ const selecionados = ref([]);
 
 const metodoPagamento = ref('Numerário');
 const dataLevantamento = ref(new Date().toISOString().slice(0, 10));
-const funcionarioId = 1; // Substituir pelo funcionário logado
+const funcionarioId = 1; // ID do funcionário logado
 
 const total = computed(() =>
   selecionados.value.reduce(
-    (sum, peca) => sum + parseFloat(peca.preco),
+    (sum, peca) => sum + parseFloat(peca.preco) * (peca.quantidade || 1),
     0
   ).toFixed(2)
 );
@@ -143,7 +141,7 @@ function atualizarPecas() {
 }
 
 function selecionarPeca(peca) {
-  selecionados.value.push(peca);
+  selecionados.value.push({ ...peca, cor: '', quantidade: 1 });
 }
 
 async function criarFactura() {
@@ -156,9 +154,10 @@ async function criarFactura() {
       metodo_pagamento: metodoPagamento.value,
       cliente_id: clienteSelecionado.value,
       funcionario_id: funcionarioId,
+      total_a_pagar: total.value,
     };
 
-    const { data } = await api.post('/api/facturas', facturaPayload, {
+    const { data } = await api.post('/api/invoices', facturaPayload, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
@@ -167,21 +166,20 @@ async function criarFactura() {
     await Promise.all(
       selecionados.value.map((peca) =>
         api.post(
-          '/api/factura-pecas',
+          '/api/invoiceitems',
           {
-            factura_id: facturaId,
+            cor: peca.cor,
+            total: peca.preco * peca.quantidade,
             peca_id: peca.id,
-            preco: peca.preco,
+            factura_id: facturaId,
+            quantidade: peca.quantidade,
           },
           { headers: { Authorization: `Bearer ${token}` } }
         )
       )
     );
 
-    $q.notify({
-      type: 'positive',
-      message: 'Factura criada com sucesso!',
-    });
+    $q.notify({ type: 'positive', message: 'Factura e peças criadas com sucesso!' });
 
     // Reset
     clienteSelecionado.value = null;
@@ -192,15 +190,12 @@ async function criarFactura() {
     selecionados.value = [];
   } catch (error) {
     console.error('Erro ao criar factura:', error);
-    $q.notify({
-      type: 'negative',
-      message: 'Erro ao criar factura!',
-    });
+    $q.notify({ type: 'negative', message: 'Erro ao criar factura!' });
   }
 }
 
 function navegarParaAdicionarCliente() {
-  router.push('/clientes'); // Navega para a tela de cadastro de clientes
+  router.push('/clientes');
 }
 
 onMounted(() => {
