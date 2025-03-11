@@ -154,34 +154,21 @@ async function criarFactura() {
       metodo_pagamento: metodoPagamento.value,
       cliente_id: clienteSelecionado.value,
       funcionario_id: funcionarioId,
-      total_a_pagar: total.value,
+      itens: selecionados.value.map(peca => ({
+        id: peca.id,
+        peca_id: peca.id,
+        cor: peca.cor,
+        quantidade: peca.quantidade,
+        preco: peca.preco,
+        total: peca.preco * peca.quantidade
+      }))
     };
 
-    const { data } = await api.post('/api/invoices', facturaPayload, {
+    await api.post('/api/invoices', facturaPayload, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    const facturaId = data.data.id;
-
-    await Promise.all(
-      selecionados.value.map((peca) =>
-        api.post(
-          '/api/invoiceitems',
-          {
-            cor: peca.cor,
-            total: peca.preco * peca.quantidade,
-            peca_id: peca.id,
-            factura_id: facturaId,
-            quantidade: peca.quantidade,
-          },
-          { headers: { Authorization: `Bearer ${token}` } }
-        )
-      )
-    );
-
-    $q.notify({ type: 'positive', message: 'Factura e peças criadas com sucesso!' });
-
-    // Reset
+    Notify({ type: 'positive', message: 'Factura e peças criadas com sucesso!' });
     clienteSelecionado.value = null;
     metodoPagamento.value = 'Numerário';
     dataLevantamento.value = new Date().toISOString().slice(0, 10);
