@@ -155,6 +155,7 @@ async function criarFactura() {
       cliente_id: clienteSelecionado.value,
       funcionario_id: funcionarioId,
       total_a_pagar: total.value,
+      itens: selecionados.value
     };
 
     const { data } = await api.post('/api/invoices', facturaPayload, {
@@ -163,21 +164,21 @@ async function criarFactura() {
 
     const facturaId = data.data.id;
 
-    await Promise.all(
-      selecionados.value.map((peca) =>
-        api.post(
-          '/api/invoiceitems',
-          {
-            cor: peca.cor,
-            total: peca.preco * peca.quantidade,
-            peca_id: peca.id,
-            factura_id: facturaId,
-            quantidade: peca.quantidade,
-          },
-          { headers: { Authorization: `Bearer ${token}` } }
-        )
-      )
-    );
+    // await Promise.all(
+    //   selecionados.value.map((peca) =>
+    //     api.post(
+    //       '/api/invoiceitems',
+    //       {
+    //         cor: peca.cor,
+    //         total: peca.preco * peca.quantidade,
+    //         peca_id: peca.id,
+    //         factura_id: facturaId,
+    //         quantidade: peca.quantidade,
+    //       },
+    //       { headers: { Authorization: `Bearer ${token}` } }
+    //     )
+    //   )
+    // );
 
     $q.notify({ type: 'positive', message: 'Factura e peças criadas com sucesso!' });
 
