@@ -2,8 +2,8 @@
   <div class="login-page">
     <div class="form">
       <form class="login-form" @submit.prevent="login">
-        <input v-model="email" type="email" placeholder="email" required />
-        <input v-model="password" type="password" placeholder="password" required />
+        <input v-model="form.email" type="email" placeholder="Email" required />
+        <input v-model="form.password" type="password" placeholder="Password" required />
         <button type="submit">Login</button>
         <p class="message">
           Not registered? <a href="#">Create an account</a>
@@ -13,53 +13,39 @@
   </div>
 </template>
 
-<script>
-import api from 'app/utils/Api';
+<script setup>
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+import { Notify } from "quasar";
+import { useAuthStore } from "src/stores/auth";
+const auth =useAuthStore();
 
-export default {
-  data() {
-    return {
-      email: "",
-      password: "",
-    };
-  },
-  methods: {
-    async  login() {
+const form = ref({
+  email: "",
+  password: "",
+});
 
+const router = useRouter();
+
+
+
+async function login() {
   try {
-    const response = await api.post("/api/login", {
-      email: this.email,
-      password: this.password,
-    });
-    console.log("Sucesso:", response);
+    auth.signIn(form.value)
 
-    const token = response.data.data.token;
-    const id = response.data.data.user.id;
-     localStorage.setItem("user_id", id);
-
-    // Salve o token no localStorage
-    localStorage.setItem("auth_token", token);
-
-    // Redirecione para o dashboard
-    this.$router.push("/dashboard");
+    router.push("/dashboard");
   } catch (error) {
-    console.error("Erro:", error);
-    alert("Erro no login.");
+    console.error("Erro ao fazer login:", error);
+    Notify.create({
+      type: "negative",
+      message: "Falha no login. Verifique suas credenciais.",
+    });
   }
-},
-
-  },
-  mounted() {
-  localStorage.removeItem("auth_token");
-  localStorage.removeItem("user_id");
-},
-};
-
-
+}
 </script>
 
 <style>
-@import url(https://fonts.googleapis.com/css?family=Roboto:300);
+@import url("https://fonts.googleapis.com/css?family=Roboto:300");
 
 .login-page {
   width: 360px;
