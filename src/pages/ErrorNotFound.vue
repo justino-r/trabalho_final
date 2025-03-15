@@ -1,23 +1,17 @@
 <template>
-  <div class="fullscreen bg-blue text-white text-center q-pa-md flex flex-center">
-    <div>
-      <div style="font-size: 30vh">
-        404
+  <div class="fullscreen text-center q-pa-md flex flex-center">
+    <div class="container">
+      <div class="gif">
+        <img src="https://i.postimg.cc/2yrFyxKv/giphy.gif" alt="gif_ing" />
       </div>
+      <div class="content">
+        <h1 class="main-heading">This page is gone.</h1>
+        <p>
+          ...maybe the page you're looking for is not found or never existed.
+        </p>
 
-      <div class="text-h2" style="opacity:.4">
-        Oops. Nothing here...
+          <q-btn color="primary" to="/dashboard">Voltar a pagina inicial   <i class="far fa-hand-point-right"></i></q-btn>
       </div>
-
-      <q-btn
-        class="q-mt-xl"
-        color="white"
-        text-color="blue"
-        unelevated
-        to="/"
-        label="Go Home"
-        no-caps
-      />
     </div>
   </div>
 </template>
@@ -25,3 +19,56 @@
 <script setup lang="ts">
 //
 </script>
+
+
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Poppins", sans-serif;
+}
+
+.container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.gif {
+  display: flex;
+  justify-content: center;
+}
+
+.content {
+  text-align: center;
+  margin: 3rem 0;
+}
+
+.content .main-heading {
+  font-size: 2.5rem;
+  font-weight: 700;
+}
+p {
+  font-size: 1.3rem;
+  padding: 0.7rem 0;
+}
+
+button {
+  padding: 1rem;
+  border-radius: 15px;
+  outline: none;
+  border: none;
+  background: #0046d4;
+  color: #fff;
+  font-size: 1.3rem;
+  cursor: pointer;
+}
+
+</style>

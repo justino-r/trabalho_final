@@ -1,75 +1,44 @@
 <template>
   <q-page class="q-pa-md">
     <q-card class="q-pa-md">
+      <q-card-section class="row justify-between items-center">
+        <div class="text-h5 text-primary">Lista de Facturas</div>
+        <q-btn color="positive" label="Nova Factura" @click="novaFactura" />
+      </q-card-section>
+
       <q-card-section>
-        <div class="text-h5 text-primary">Nova factura</div>
-      </q-card-section>
-
-      <!-- Formulário de Cliente -->
-      <q-card-section class="row q-gutter-md">
-        <q-select filled label="Pesquisar Cliente" v-model="clienteSelecionado" :options="clientes" option-label="nome"
-          option-value="id" use-input input-debounce="500" @filter="buscarClientes" emit-value map-options
-          class="col" />
-        <q-btn label="Adicionar Cliente" color="primary" @click="navegarParaAdicionarCliente" class="q-mt-none"
-          style="margin-left: 10px;" />
-      </q-card-section>
-
-      <!-- Formulário de Factura -->
-      <q-card-section class="row q-gutter-md">
-        <q-select filled label="Método de Pagamento" v-model="metodoPagamento" :options="['Numerário', 'POS']"
-          class="col" />
-        <q-input filled label="Data de Levantamento" v-model="dataLevantamento" type="date" class="col" />
-      </q-card-section>
-
-      <!-- Seleção de Peças -->
-      <q-card-section>
-        <div class="text-primary text-subtitle1">Selecionar peças</div>
-      </q-card-section>
-
-      <q-card-section class="row">
-        <q-card class="col-6 q-pa-md">
-          <div class="text-primary text-bold">Selecionar Serviço</div>
-          <q-select filled label="Selecionar Serviço" :options="servicos" option-label="nome"
-            v-model="servicoSelecionado" @update:model-value="atualizarPecas" class="q-mt-md" />
-
-          <q-list bordered separator class="q-mt-md">
-            <q-item v-for="(peca, index) in pecas" :key="index" clickable @click="selecionarPeca(peca)">
-              <q-item-section>
-                {{ peca.tipo_peca.nome }} - {{ peca.tipo_peca.descricao }} ({{ peca.preco }} MZN)
-              </q-item-section>
-            </q-item>
-          </q-list>
-        </q-card>
-
-        <q-card class="col-6 q-pa-md">
-          <div class="text-primary text-bold">Selecionados</div>
-          <q-list bordered separator class="q-mt-md">
-            <q-item v-for="(item, index) in selecionados" :key="index">
-              <q-item-section>
-                {{ item.tipo_peca.nome }} - {{ item.tipo_peca.descricao }} ({{ item.preco }} MZN)
-              </q-item-section>
-              <q-item-section side>
-                <q-input filled dense v-model="item.cor" label="Cor" class="q-mb-md" />
-                <q-input filled dense v-model.number="item.quantidade" label="Quantidade" type="number" min="1" />
-              </q-item-section>
-            </q-item>
-          </q-list>
-        </q-card>
-      </q-card-section>
-
-      <q-card-section class="q-mt-md">
-        <q-card class="q-pa-md">
-          <div class="text-primary text-bold">Resumo</div>
-          <div>Total: {{ total }} MZN</div>
-          <q-btn color="primary" label="Finalizar Factura" class="q-mt-md" @click="criarFactura" />
-        </q-card>
+        <q-table
+          :rows="facturas"
+          :columns="columns"
+          row-key="id"
+          separator="cell"
+          dense
+        >
+          <template v-slot:body-cell-acoes="props">
+            <q-td :props="props">
+              <q-btn
+                color="primary"
+                label="Ver Detalhes"
+                @click="verDetalhes(props.row)"
+                dense
+                class="q-mr-sm"
+              />
+              <q-btn
+                color="secondary"
+                label="Imprimir"
+                @click="imprimirFactura(props.row)"
+                dense
+              />
+            </q-td>
+          </template>
+        </q-table>
       </q-card-section>
     </q-card>
   </q-page>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import api from 'app/utils/Api';
 import { useQuasar } from 'quasar';
 import { useRouter } from 'vue-router';
@@ -77,124 +46,51 @@ import { useRouter } from 'vue-router';
 const $q = useQuasar();
 const router = useRouter();
 
-const clientes = ref([]);
-const clienteSelecionado = ref(null);
-const servicos = ref([]);
-const servicoSelecionado = ref(null);
-const pecas = ref([]);
-const selecionados = ref([]);
+const facturas = ref([]);
 
-const metodoPagamento = ref('Numerário');
-const dataLevantamento = ref(new Date().toISOString().slice(0, 10));
-const funcionarioId = 1; // ID do funcionário logado
+const columns = [
+  { name: 'id', required: true, label: 'ID', align: 'left', field: row => row.id, sortable: true },
+  { name: 'cliente', label: 'Cliente', align: 'left', field: row => row.cliente?.nome || 'N/A', sortable: true },
+  { name: 'total', label: 'Total (MZN)', align: 'left', field:  row => calcularTotalPecas(row.facturapecas), sortable: true },
+  { name: 'data', label: 'Data de Levantamento', align: 'left', field: row => row.data_levantamento, sortable: true },
+  { name: 'acoes', label: 'Ações', align: 'center' }
+];
 
-const total = computed(() =>
-  selecionados.value.reduce(
-    (sum, peca) => sum + parseFloat(peca.preco) * (peca.quantidade || 1),
-    0
-  ).toFixed(2)
-);
 
-async function fetchServicos() {
-  try {
-    const token = localStorage.getItem('auth_token');
-    if (!token) throw new Error('Token de autenticação não encontrado.');
-
-    const response = await api.get('/api/services', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    servicos.value = response.data?.data || [];
-  } catch (error) {
-    console.error('Erro ao buscar serviços:', error);
-  }
-}
-
-async function buscarClientes(val, update) {
-  if (val === '') {
-    update(() => {
-      clientes.value = [];
-    });
-    return;
-  }
-
-  try {
-    const token = localStorage.getItem('auth_token');
-    if (!token) throw new Error('Token de autenticação não encontrado.');
-
-    const { data } = await api.get(`/api/customers?filter[nome]=${val}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    update(() => {
-      clientes.value = data.data || [];
-    });
-  } catch (error) {
-    console.error('Erro ao buscar clientes:', error);
-    update(() => {
-      clientes.value = [];
-    });
-  }
-}
-
-function atualizarPecas() {
-  pecas.value = servicoSelecionado.value?.pecas || [];
-}
-
-function selecionarPeca(peca) {
-  selecionados.value.push({ ...peca, cor: '', quantidade: 1 });
-}
-
-async function criarFactura() {
-  try {
-    const token = localStorage.getItem('auth_token');
-    if (!token) throw new Error('Token de autenticação não encontrado.');
-
-    const facturaPayload = {
-      data_levantamento: dataLevantamento.value,
-      metodo_pagamento: metodoPagamento.value,
-      cliente_id: clienteSelecionado.value,
-      funcionario_id: funcionarioId,
-      total_a_pagar: total.value,
-      itens: selecionados.value
-    };
-
-    await api.post('/api/invoices', facturaPayload, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    Notify({ type: 'positive', message: 'Factura e peças criadas com sucesso!' });
-    clienteSelecionado.value = null;
-    metodoPagamento.value = 'Numerário';
-    dataLevantamento.value = new Date().toISOString().slice(0, 10);
-    servicoSelecionado.value = null;
-    pecas.value = [];
-    selecionados.value = [];
-  } catch (error) {
-    console.error('Erro ao criar factura:', error);
-    $q.notify({ type: 'negative', message: 'Erro ao criar factura!' });
-  }
+function calcularTotalPecas(facturapecas) {
+  if (!facturapecas || !Array.isArray(facturapecas)) return 0;
+  return facturapecas.reduce((total, peca) => total + peca.total, 0);
 }
 
 async function fetchFacturas() {
   try {
     const token = localStorage.getItem('auth_token');
-    if (!token) throw new Error('Token faltando, autentique-se');
+    if (!token) throw new Error('Token de autenticação não encontrado.');
 
-    const response = await api.get('api/invoices', {
+    const response = await api.get('/api/invoices', {
       headers: { Authorization: `Bearer ${token}` },
     });
-    funcionarios.value = response.data.data;
+    facturas.value = response.data?.data || [];
   } catch (error) {
     console.error('Erro ao buscar facturas:', error);
+    $q.notify({ type: 'negative', message: 'Erro ao carregar facturas!' });
   }
 }
 
-function navegarParaAdicionarCliente() {
-  router.push('/clientes');
+function verDetalhes(factura) {
+  router.push(`/faturas/${factura.id}`);
+}
+
+function imprimirFactura(factura) {
+  router.push(`/faturas/imprimir/${factura.id}`);
+  // window.print(); // Simples abordagem para imprimir a página
+}
+
+function novaFactura() {
+  router.push('/faturas/criar');
 }
 
 onMounted(() => {
-  fetchServicos();
   fetchFacturas();
 });
 </script>

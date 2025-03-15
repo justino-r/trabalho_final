@@ -155,22 +155,37 @@ async function criarFactura() {
       cliente_id: clienteSelecionado.value,
       funcionario_id: funcionarioId,
       total_a_pagar: total.value,
-      pecas: selecionados.value.map(peca => ({
-        cor: peca.cor,
-        total: peca.preco * peca.quantidade,
-        peca_id: peca.id,
-        quantidade: peca.quantidade
-      }))
+      itens: selecionados.value
     };
 
     await api.post('/api/invoices', facturaPayload, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    $q.notify({ type: 'positive', message: 'Factura e peças criadas com sucesso!' });
+    Notify({ type: 'positive', message: 'Factura e peças criadas com sucesso!' });
+    clienteSelecionado.value = null;
+    metodoPagamento.value = 'Numerário';
+    dataLevantamento.value = new Date().toISOString().slice(0, 10);
+    servicoSelecionado.value = null;
+    pecas.value = [];
+    selecionados.value = [];
   } catch (error) {
     console.error('Erro ao criar factura:', error);
     $q.notify({ type: 'negative', message: 'Erro ao criar factura!' });
+  }
+}
+
+async function fetchFacturas() {
+  try {
+    const token = localStorage.getItem('auth_token');
+    if (!token) throw new Error('Token faltando, autentique-se');
+
+    const response = await api.get('api/invoices', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    funcionarios.value = response.data.data;
+  } catch (error) {
+    console.error('Erro ao buscar facturas:', error);
   }
 }
 
@@ -180,5 +195,6 @@ function navegarParaAdicionarCliente() {
 
 onMounted(() => {
   fetchServicos();
+  fetchFacturas();
 });
 </script>
