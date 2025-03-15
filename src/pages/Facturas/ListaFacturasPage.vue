@@ -158,31 +158,11 @@ async function criarFactura() {
       itens: selecionados.value
     };
 
-    const { data } = await api.post('/api/invoices', facturaPayload, {
+    await api.post('/api/invoices', facturaPayload, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    const facturaId = data.data.id;
-
-    // await Promise.all(
-    //   selecionados.value.map((peca) =>
-    //     api.post(
-    //       '/api/invoiceitems',
-    //       {
-    //         cor: peca.cor,
-    //         total: peca.preco * peca.quantidade,
-    //         peca_id: peca.id,
-    //         factura_id: facturaId,
-    //         quantidade: peca.quantidade,
-    //       },
-    //       { headers: { Authorization: `Bearer ${token}` } }
-    //     )
-    //   )
-    // );
-
-    $q.notify({ type: 'positive', message: 'Factura e peças criadas com sucesso!' });
-
-    // Reset
+    Notify({ type: 'positive', message: 'Factura e peças criadas com sucesso!' });
     clienteSelecionado.value = null;
     metodoPagamento.value = 'Numerário';
     dataLevantamento.value = new Date().toISOString().slice(0, 10);
@@ -195,11 +175,26 @@ async function criarFactura() {
   }
 }
 
+async function fetchFacturas() {
+  try {
+    const token = localStorage.getItem('auth_token');
+    if (!token) throw new Error('Token faltando, autentique-se');
+
+    const response = await api.get('api/invoices', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    funcionarios.value = response.data.data;
+  } catch (error) {
+    console.error('Erro ao buscar facturas:', error);
+  }
+}
+
 function navegarParaAdicionarCliente() {
   router.push('/clientes');
 }
 
 onMounted(() => {
   fetchServicos();
+  fetchFacturas();
 });
 </script>
