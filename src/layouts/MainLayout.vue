@@ -3,14 +3,7 @@
     <!-- Header -->
     <q-header elevated>
       <q-toolbar>
-        <q-btn
-          flat
-          dense
-          round
-          icon="menu"
-          aria-label="Menu"
-          @click="toggleLeftDrawer"
-        />
+        <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleLeftDrawer" />
         <q-toolbar-title>
           Lavanderia Dashboard
         </q-toolbar-title>
@@ -18,11 +11,7 @@
     </q-header>
 
     <!-- Drawer -->
-    <q-drawer
-      v-model="leftDrawerOpen"
-      show-if-above
-      bordered
-    >
+    <q-drawer v-model="leftDrawerOpen" show-if-above bordered>
       <q-list>
         <q-item-label header>
           Menu
@@ -35,6 +24,24 @@
           </q-item-section>
           <q-item-section>
             <q-item-label>Dashboard</q-item-label>
+          </q-item-section>
+        </q-item>
+
+        <q-item clickable v-ripple @click="navigateTo('/servicos')">
+          <q-item-section avatar>
+            <q-icon name="settings" />
+          </q-item-section>
+          <q-item-section>
+            <q-item-label>Serviços</q-item-label>
+          </q-item-section>
+        </q-item>
+
+        <q-item clickable v-ripple @click="navigateTo('/tipo_pecas')">
+          <q-item-section avatar>
+            <q-icon name="checkroom" />
+          </q-item-section>
+          <q-item-section>
+            <q-item-label>Tipo de Peça</q-item-label>
           </q-item-section>
         </q-item>
 

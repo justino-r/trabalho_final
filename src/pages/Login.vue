@@ -14,11 +14,13 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { Notify } from "quasar";
 import { useAuthStore } from "src/stores/auth";
-const auth =useAuthStore();
+import { storeToRefs } from "pinia";
+const auth = useAuthStore();
+
 
 const form = ref({
   email: "",
@@ -42,6 +44,10 @@ async function login() {
     });
   }
 }
+onMounted(() => {
+  auth.signOut();
+
+});
 </script>
 
 <style>

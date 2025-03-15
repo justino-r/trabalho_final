@@ -181,11 +181,26 @@ async function criarFactura() {
   }
 }
 
+async function fetchFacturas() {
+  try {
+    const token = localStorage.getItem('auth_token');
+    if (!token) throw new Error('Token faltando, autentique-se');
+
+    const response = await api.get('api/invoices', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    funcionarios.value = response.data.data;
+  } catch (error) {
+    console.error('Erro ao buscar facturas:', error);
+  }
+}
+
 function navegarParaAdicionarCliente() {
   router.push('/clientes');
 }
 
 onMounted(() => {
   fetchServicos();
+  fetchFacturas();
 });
 </script>

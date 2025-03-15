@@ -1,7 +1,7 @@
 <template>
   <q-page>
     <q-card-section>
-      <div class="text-h5">Bem-vindo, {{ authUser?.name || 'Usuário' }}!</div>
+      <!-- <div class="text-h5">Bem-vindo, {{ authUser?.name || 'Usuário' }}!</div> -->
     </q-card-section>
 
     <!-- Cards com métricas principais -->
