@@ -4,7 +4,17 @@
       <form class="login-form" @submit.prevent="login">
         <input v-model="form.email" type="email" placeholder="Email" required />
         <input v-model="form.password" type="password" placeholder="Password" required />
-        <button type="submit">Login</button>
+        <div class="text-left">
+          <span v-if="error" class="text-red">Erro ao fazer o login</span>
+        </div>
+        <!-- <button type="submit">Login</button> -->
+        <q-btn :loading="loading" color="primary" type="submit" style="width: 150px">
+          Login
+          <template v-slot:loading>
+            <q-spinner-hourglass class="on-left" />
+            Loading...
+          </template>
+        </q-btn>
         <p class="message">
           Not registered? <a href="#">Create an account</a>
         </p>
@@ -29,14 +39,26 @@ const form = ref({
 
 const router = useRouter();
 
+const error = ref(false)
+
+const loading = ref(false)
+
 
 
 async function login() {
   try {
-    auth.signIn(form.value)
+    loading.value = true;
+    if (await auth.signIn(form.value) == 200) {
+      error.value = false;
+      loading.value = false;
+      router.push("/dashboard");
+    } else {
+      error.value = true;
+      loading.value = false;
+    }
 
-    router.push("/dashboard");
   } catch (error) {
+    loading.value = false;
     console.error("Erro ao fazer login:", error);
     Notify.create({
       type: "negative",
