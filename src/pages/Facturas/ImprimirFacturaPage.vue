@@ -1,87 +1,128 @@
 <template>
-  <q-page class="q-pa-md">
-    <q-card class="q-pa-md">
-      <q-card-section class="row justify-between items-center">
-        <div class="row items-center">
-          <q-img src="https://s3.eu-central-1.amazonaws.com/zl-clients-sharings/90Tech.png" style="width: 120px;" />
-        </div>
-        <div class="text-right">
-          <div class="text-h5 text-primary">FACTURE</div>
-          <div><strong>N°90T-17-01-0123</strong></div>
-        </div>
-      </q-card-section>
+  <div class="factura-container">
+    <q-page class="q-pa-md">
+      <q-card class="q-pa-md q-elevated">
+        <!-- Cabeçalho -->
+        <q-card-section class="row justify-between items-center bg-primary text-white rounded-borders q-pa-md">
+          <div>
+            <div class="text-h5"> <strong>Moz SQ Clean.</strong></div>
+            <div class="text-caption">Av. Moçambique, 123 - Maputo | Tel: +258 84 123 4567</div>
+          </div>
+          <!-- <q-btn color="white" text-color="primary" label="Imprimir" @click="exportPdf" icon="print" /> -->
+        </q-card-section>
 
-      <q-card-section class="row justify-between">
-        <div>
-          <strong>90TECH SAS</strong><br>
-          6B Rue Aux-Saussaies-Des-Dames<br>
-          57950 MONTIGNY-LES-METZ
-        </div>
-        <div class="text-right">
-          <strong>Energies54</strong><br>
-          Réf. Client <em>C00022</em><br>
-          12 Rue de Verdun<br>
-          54250 JARNY
-        </div>
-      </q-card-section>
+        <q-separator />
 
-      <q-card-section>
-        <div class="text-subtitle1 text-bold">Audits et rapports mensuels (1er Novembre 2016 - 30 Novembre 2016)</div>
-      </q-card-section>
+        <!-- Informações da Fatura -->
+        <q-card-section class="q-mt-md">
+          <div class="row justify-between">
+            <div>
+              <div class="text-subtitle2"><strong>ID da Fatura:</strong> {{ factura.id }}</div>
+              <div class="text-subtitle2"><strong>Data de Emissão:</strong> {{ formatarData(factura.data_levantamento) }}</div>
+            </div>
+            <div>
+              <div class="text-subtitle2"><strong>Cliente:</strong> {{ factura.cliente?.nome || 'N/A' }}</div>
+              <div class="text-subtitle2"><strong>Total (MZN): {{ calcularTotalPecas(factura.facturapecas) }}</strong> {{ factura.total_a_pagar }}</div>
+            </div>
+          </div>
+        </q-card-section>
 
-      <q-card-section>
-        <q-table :rows="items" :columns="columns" row-key="description" dense separator="horizontal" />
-      </q-card-section>
+        <q-separator class="q-my-md" />
 
-      <q-card-section class="row justify-end">
-        <q-table :rows="totals" :columns="totalColumns" row-key="label" dense separator="none" flat />
-      </q-card-section>
+        <!-- Tabela de Peças -->
+        <q-card-section>
+          <div class="text-h6 text-primary">🛒 Itens da Fatura</div>
+          <q-table dense :rows="factura.facturapecas" :columns="pecasColumns" row-key="id" bordered flat />
+        </q-card-section>
 
-      <q-card-section>
-        <p class="text-caption">
-          En votre aimable règlement et avec nos remerciements.<br>
-          Conditions de paiement : paiement à réception de facture, à 15 jours.<br>
-          Aucun escompte consenti pour règlement anticipé.<br>
-          Règlement par virement bancaire.<br><br>
-          En cas de retard de paiement, indemnité forfaitaire pour frais de recouvrement : 40 euros (art. L.4413 et L.4416 code du commerce).
-        </p>
-      </q-card-section>
+        <!-- Total e Observações -->
+        <q-separator class="q-my-md" />
+        <q-card-section class="row justify-between">
+          <div>
+            <div class="text-bold text-h6">Total a Pagar: {{ calcularTotalPecas(factura.facturapecas) }}</div>
+            <div class="text-h5 text-primary">{{ factura.total_a_pagar }} MZN</div>
+          </div>
+          <div>
+            <div class="text-caption">Pagamento deve ser efetuado até a data de vencimento indicada.</div>
+          </div>
+        </q-card-section>
 
-      <q-card-section class="text-right text-caption">
-        90TECH SAS - N° SIRET 80897753200015 RCS METZ<br>
-        6B, Rue aux Saussaies des Dames - 57950 MONTIGNY-LES-METZ<br>
-        Code APE 6201Z - N° TVA Intracom. FR 77 808977532<br>
-        IBAN FR76 1470 7034 0031 4211 7882 825 - SWIFT CCBPFRPPMTZ
-      </q-card-section>
-    </q-card>
-  </q-page>
+        <!-- Rodapé -->
+        <q-card-section class="q-mt-md row justify-end">
+          <!-- <q-btn color="negative" label="Voltar" @click="voltar" icon="arrow_back" /> -->
+        </q-card-section>
+      </q-card>
+    </q-page>
+  </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { watch } from 'vue';
+import { ref, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import api from 'app/utils/Api';
+import { useQuasar } from 'quasar';
+import html2pdf from 'html2pdf.js';
 
-const columns = [
-  { name: 'description', label: 'Description', align: 'left', field: 'description' },
-  { name: 'quantite', label: 'Quantité', align: 'left', field: 'quantite' },
-  { name: 'unite', label: 'Unité', align: 'left', field: 'unite' },
-  { name: 'pu_ht', label: 'PU HT', align: 'right', field: 'pu_ht' },
-  { name: 'tva', label: 'TVA', align: 'left', field: 'tva' },
-  { name: 'total_ht', label: 'Total HT', align: 'right', field: 'total_ht' }
+const route = useRoute();
+const router = useRouter();
+const $q = useQuasar();
+const factura = ref({ facturapecas: [] });
+
+const pecasColumns = [
+  { name: 'id', label: 'ID', field: row => row.id, sortable: true },
+  { name: 'cor', label: 'Cor', field: row => row.cor, sortable: true },
+  { name: 'quantidade', label: 'Quantidade', field: row => row.quantidade, sortable: true },
+
+  { name: 'total', label: 'Total (MZN)', field: row => row.total, sortable: true }
 ];
 
-const items = ref([
-  { description: 'Audits et rapports mensuels', quantite: 1, unite: 'Jour', pu_ht: '500,00€', tva: '20%', total_ht: '500,00€' },
-  { description: "Génération des rapports d'activité", quantite: 4, unite: 'Rapport', pu_ht: '800,00€', tva: '20%', total_ht: '3 200,00€' }
-]);
+async function fetchFactura() {
+  try {
+    const token = localStorage.getItem('auth_token');
+    if (!token) throw new Error('Token de autenticação não encontrado.');
 
-const totalColumns = [
-  { name: 'label', field: 'label', align: 'left' },
-  { name: 'value', field: 'value', align: 'right' }
-];
+    const response = await api.get(`/api/invoices/${route.params.id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    factura.value = response.data?.data;
+  } catch (error) {
+    console.error('Erro ao buscar factura:', error);
+    $q.notify({ type: 'negative', message: 'Erro ao carregar detalhes da factura!' });
+  }
+}
 
-const totals = ref([
-  { label: 'Total HT', value: '3 700,00€' },
-  { label: 'TVA 20%', value: '740,00€' },
-  { label: 'Total TTC', value: '4 440,00€' }
-]);
+function voltar() {
+  router.push('/faturas');
+}
+
+function formatarData(data) {
+  if (!data) return 'N/A';
+  const d = new Date(data);
+  return d.toLocaleDateString('pt-PT');
+}
+function calcularTotalPecas(facturapecas) {
+  if (!facturapecas || !Array.isArray(facturapecas)) return 0;
+  return facturapecas.reduce((total, peca) => total + peca.total, 0);
+}
+function exportPdf() {
+  html2pdf(document.querySelector('.factura-container'), {
+    margin: 10,
+    filename: `fatura_${factura.value.id}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  });
+}
+watch(
+  () => factura.value.id,
+  (newValue) => {
+    if (newValue) {
+      setTimeout(() => exportPdf(), 1000); // Aguarda para garantir renderização
+    }
+  }
+);
+onMounted(() => {
+  fetchFactura();
+});
 </script>

@@ -8,10 +8,9 @@
       <!-- Formulário de Cliente -->
       <q-card-section class="row q-gutter-md">
         <q-select filled label="Pesquisar Cliente" v-model="clienteSelecionado" :options="clientes" option-label="nome"
-          option-value="id" use-input input-debounce="500" @filter="buscarClientes" emit-value map-options
-          class="col" />
-        <q-btn label="Adicionar Cliente" color="primary" @click="navegarParaAdicionarCliente" class="q-mt-none"
-          style="margin-left: 10px;" />
+          option-value="id" use-input input-debounce="500" @filter="buscarClientes" emit-value map-options class="col"
+          clearable />
+        <q-btn class="btn" flat label="Adicionar Cleinte" @click="navegarParaAdicionarCliente"  />
       </q-card-section>
 
       <!-- Formulário de Factura -->
@@ -71,6 +70,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import api from 'app/utils/Api';
+import { Notify } from 'quasar';
 import { useQuasar } from 'quasar';
 import { useRouter } from 'vue-router';
 
@@ -86,7 +86,7 @@ const selecionados = ref([]);
 
 const metodoPagamento = ref('Numerário');
 const dataLevantamento = ref(new Date().toISOString().slice(0, 10));
-const funcionarioId = 1; // ID do funcionário logado
+const funcionarioId = 7; // ID do funcionário logado
 
 const total = computed(() =>
   selecionados.value.reduce(
@@ -198,3 +198,12 @@ onMounted(() => {
   fetchFacturas();
 });
 </script>
+<style>
+.btn{
+  font-size: 12px;
+    font-weight: bold;
+    color: white;
+    background-color:var(--q-primary) ;
+
+}
+</style>

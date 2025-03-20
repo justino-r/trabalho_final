@@ -83,7 +83,7 @@ function calcularTotalPecas(facturapecas) {
 }
 
 function voltar() {
-  router.push('/facturas');
+  router.push('/faturas');
 }
 
 onMounted(() => {

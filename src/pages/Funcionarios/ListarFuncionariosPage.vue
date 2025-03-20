@@ -89,7 +89,7 @@ export default {
         const token = localStorage.getItem("auth_token");
         if (!token) throw new Error("Token faltando, autentique-se");
 
-        const response = await api.get("api/users", {
+        const response = await api.get("api/employees", {
           headers: { Authorization: `Bearer ${token}` },
         });
         employees.value = response.data?.data || [];
