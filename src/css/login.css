@@ -1,0 +1,20 @@
+/* CSS para a tela de login */
+.login-container {
+    background-image: url('\LavandariaQuasar/imagem/imagem2.jpg'); /* Substitua pelo caminho correto da imagem */
+    background-size: cover;  /* Faz a imagem cobrir toda a tela */
+    background-position: center; /* Centraliza a imagem */
+    height: 100vh;  /* Faz com que o fundo cubra a altura da tela */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;  /* Cor do texto para contrastar com o fundo */
+  }
+  
+  /* Estilo do formulário de login */
+  .login-form {
+    background-color: rgba(0, 0, 0, 0.6);  /* Fundo escuro transparente para melhorar a legibilidade */
+    padding: 20px;
+    border-radius: 8px;
+    width: 300px;  /* Tamanho do formulário */
+  }
+  

@@ -80,6 +80,19 @@ onMounted(() => {
   padding: 8% 0 0;
   margin: auto;
 }
+<style scoped>
+/* CSS que você já escreveu */
+.login-container {
+  background-image: url('\LavandariaQuasar/imagem/imagem2.jpg');
+  background-size: cover;
+  background-position: center;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+}
+
 
 .form {
   position: relative;

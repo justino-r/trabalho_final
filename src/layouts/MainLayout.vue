@@ -72,6 +72,24 @@
           </q-item-section>
         </q-item>
 
+        <q-item clickable v-ripple @click="navigateTo('/Relatorio')">
+          <q-item-section avatar>
+            <q-icon name="leaderboard" />
+          </q-item-section>
+          <q-item-section>
+            <q-item-label>Relatorios</q-item-label>
+          </q-item-section>
+        </q-item>
+
+        <q-item clickable v-ripple @click="navigateTo('/Funcionarios')">
+          <q-item-section avatar>
+            <q-icon name="groups" />
+          </q-item-section>
+          <q-item-section>
+            <q-item-label>Funcionarios</q-item-label>
+          </q-item-section>
+        </q-item>
+
         <q-item clickable v-ripple @click="navigateTo('/despesas')">
           <q-item-section avatar>
             <q-icon name="money_off" />

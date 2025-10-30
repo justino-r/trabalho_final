@@ -23,12 +23,20 @@ const routes: RouteRecordRaw[] = [
       { path: '/faturas/criar', component: () => import('src/pages/Facturas/NovaFacturasPage.vue')},
       { path: '/pecas', component: () => import('pages/pecas/ListaPecasPage.vue')},
       { path: '/despesas', component: () => import('pages/Despesas/ListaDespesasPage.vue')},
+      { path: '/Cliente', component: () => import('pages/cliente/ClientePage.vue')},
       { path: '/relatorios', component: () => import('pages/Relatorios/ListaRelatoriosPage.vue')},
       { path: '/funcionarios', component: () => import('pages/Funcionarios/ListarFuncionariosPage.vue')},
       { path: '/servicos', component: () => import('pages/Servicos/ListarServicosPage.vue')},
       { path: '/cargos', component: () => import('pages/Cargos/ListarCargos.vue')},
+     // { path: '/Senha', component: () => import('pages/Alteracao-senha/alteracao-senha.vue')},
+      { path: '/cadastro', component: () => import('pages/cadastro-cliente/cadastro-cliente.vue')},
+      { path: '/menu-cliente', component: () => import('pages/menu-cliente/menu-cliente.vue')},
+      { path: '/pedidos-confirmados', component: () => import('pages/pedidos-confirmados/pedidosconfirmados.vue')},
+      { path: '/pedidos-efectuados', component: () => import('pages/pedidos-efectuados/pedidosefectuados.vue')},
+      { path: '/consultar-estado', component: () => import('pages/consultar-estado/estadoroupa.vue')},
       {path: '/tipo_pecas', component: () => import('pages/tipo_peca/ListarTipoPeca.vue')},
       {path: '/factura_peca', component: () => import('pages/factura_peca/FacturaPecaPage.vue')
+
 
       },
 
